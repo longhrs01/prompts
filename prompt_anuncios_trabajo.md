@@ -23,7 +23,8 @@ Debes asignar cada anuncio a uno de estos códigos. No crees sub-categorías. Si
   { "code": "1016", "name": "Salud y Bienestar" },
   { "code": "1017", "name": "Servicio Doméstico" },
   { "code": "1018", "name": "Servicios Generales" },
-  { "code": "1019", "name": "Ventas y Comercial" }
+  { "code": "1019", "name": "Ventas y Comercial" },
+  { "code": "1020", "name": "Tecnología e Informática" }
 ]
 ```
 
