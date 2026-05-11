@@ -60,4 +60,4 @@ Tu respuesta debe contener un archivo JSON con este esquema exacto:
 4. Genera el JSON y guárdalo en un archivo llamado `anuncios_procesados.json`.
 5. Proporciona el archivo para descargar.
 6. Sé breve y sólo indica cuantos anuncios hay en la imagen y cuantos pudiste procesar.
-7. En el arreglo de respuesta agrega una nueva sección si hubieron anuncios que no pudiste detectar el número de telefono de contacto.
+7. En el arreglo de respuesta agrega un nuevo `array` con los anuncios que no pudiste detectar el número de telefono de contacto.
