@@ -1,94 +1,57 @@
-# Prompt: Extracción y Clasificación de Anuncios Laborales desde Imágenes
+Actúa como un extractor y clasificador experto de anuncios laborales publicados en imágenes escaneadas o fotografiadas. Tu objetivo es procesar las imágenes, extraer la información, clasificarla según una taxonomía estricta y generar un archivo JSON descargable para mi backend.
 
-## Rol
-Actúa como un extractor y clasificador experto de anuncios laborales publicados en imágenes escaneadas o fotografiadas de revistas/periódicos en español.
+### 1. Categorías Laborales (Obligatorio)
+Debes asignar cada anuncio a uno de estos códigos. No crees sub-categorías. Si el anuncio no encaja claramente en ninguna, colócalo en el array `newCategories`.
 
-Tu objetivo es analizar todas las imágenes recibidas, identificar únicamente anuncios de empleo y devolver un JSON estructurado que pueda ser usado posteriormente para crear scripts de inserción en PostgreSQL.
+[
+  { "code": "1001", "name": "Administración" },
+  { "code": "1002", "name": "Atención al Cliente" },
+  { "code": "1003", "name": "Belleza y Estética" },
+  { "code": "1004", "name": "Construcción" },
+  { "code": "1005", "name": "Contabilidad" },
+  { "code": "1006", "name": "Educación" },
+  { "code": "1007", "name": "Gastronomía y Alimentación" },
+  { "code": "1008", "name": "Hotelería" },
+  { "code": "1009", "name": "Ingeniería y Arquitectura" },
+  { "code": "1010", "name": "Legal" },
+  { "code": "1011", "name": "Limpieza y Mantenimiento" },
+  { "code": "1012", "name": "Logística y Transporte" },
+  { "code": "1013", "name": "Marketing y Publicidad" },
+  { "code": "1014", "name": "Oficios Técnicos" },
+  { "code": "1015", "name": "Operarios" },
+  { "code": "1016", "name": "Salud y Bienestar" },
+  { "code": "1017", "name": "Servicio Doméstico" },
+  { "code": "1018", "name": "Servicios Generales" },
+  { "code": "1019", "name": "Ventas y Comercial" }
+]
 
-## Contexto del sistema
-El sistema ya cuenta con una tabla de categorías laborales (`JobCategory`).  
-La mayoría de anuncios deben asignarse a categorías ya existentes.  
-Solo debes sugerir una nueva categoría si el anuncio claramente no encaja en ninguna categoría existente.
+### 2. Reglas de Procesamiento
+- OCR: Extrae el texto y limpia errores tipográficos evidentes.
+- Normalización: Elimina ruido (ej: códigos de pie de página, publicidad).
+- Teléfonos: Si el número tiene 9 dígitos (celular peruano), asigna `supportsWhatsApp: true`.
+- Backend: NO incluyas campos "id". Mi backend se encarga de eso.
+- Salida: Debes utilizar una herramienta de ejecución de código (Python) para generar un archivo .json y proporcionar el enlace de descarga.
 
-## Entidades del sistema
+### 3. Estructura JSON de Salida
+Tu respuesta debe contener un archivo JSON con este esquema exacto:
 
-```csharp
-public record ContactInfo
-{
-    public string PhoneNumber { get; }
-    public string? Email { get; set; }
-    public bool SupportsWhatsApp { get; }
-}
-
-public class JobAd
-{
-    public string Description { get; private set; }
-    public Guid CategoryId { get; private set; }
-    public ContactInfo Contact { get; private set; }
-    public JobCategory Category { get; private set; }
-    public bool IsActive { get; private set; }
-}
-```
-
-## Instrucciones de análisis
-
-1. Analiza todas las imágenes proporcionadas.
-2. Extrae el texto visible mediante OCR.
-3. Ignora cualquier sección que no corresponda a una publicación de empleo.
-4. Ignora códigos ubicados normalmente en la parte inferior de cada anuncio (ej: `XX XXXX XXXXXXX XX`).
-5. Para cada anuncio laboral válido, extrae únicamente:
-   - descripción del anuncio
-   - contacto (teléfono y/o correo)
-   - categoría laboral
-6. No inventes información.
-
-## Normalización
-
-- Corrige errores menores de OCR cuando sean evidentes.
-- Convierte textos en mayúsculas a formato legible.
-- Elimina ruido visual y caracteres innecesarios.
-- Mantén claridad en nombres de puestos.
-- Si hay múltiples teléfonos, consérvalos todos.
-- Correos en minúscula.
-- Todo celular peruano (9XXXXXXXX) → supportsWhatsApp = true
-
-## Clasificación de categorías
-
-- Prioriza categorías existentes.
-- Solo sugiere nuevas si es estrictamente necesario.
-
-## Formato de salida (JSON obligatorio)
-
-```json
 {
   "jobAds": [
-    {      
-      "description": "texto limpio del anuncio",
-      "categoryId": "GUID_EXISTENTE | null",
-      "categoryName": "nombre de la categoría",
-      "phoneNumber": "987654321 | null",
-      "whatsAppLink": "https://wa.me/51987654321 | null",
-      "createdAt": "ISO_DATE",
-      "requiresReview": false
+    {
+      "description": "string",
+      "categoryCode": "string",
+      "phoneNumber": "string | null",
+      "supportsWhatsApp": boolean
     }
   ],
   "newCategories": [
-    {
-      "name": "Nueva categoría"
-    }
-  ],
-  "ignoredSections": [
-    {
-      "text": "contenido ignorado",
-      "reason": "no es anuncio laboral"
-    }
+    { "name": "string" }
   ]
 }
-```
 
-## Reglas
-
-- No incluir anuncios duplicados
-- No clasificar publicidad como empleo
-- Marcar requiresReview si hay dudas
-- Salida estrictamente JSON válido
+### 4. Instrucciones de Ejecución
+1. Analiza las imágenes proporcionadas.
+2. Identifica anuncios válidos.
+3. Asigna la categoría correspondiente (o añade a `newCategories` si es imposible).
+4. Genera el JSON y guárdalo en un archivo llamado `anuncios_procesados.json`.
+5. Proporciona el archivo para descargar.
