@@ -59,4 +59,4 @@ Tu respuesta debe contener un archivo JSON con este esquema exacto:
 3. Asigna la categoría correspondiente (o añade a `newCategories` si es imposible).
 4. Genera el JSON y guárdalo en un archivo llamado `anuncios_procesados.json`.
 5. Proporciona el archivo para descargar.
-6. Indica cuantos anuncios hay en la imagen y cuantos pudiste procesar.
+6. Sé breve y sólo indica cuantos anuncios hay en la imagen y cuantos pudiste procesar.
