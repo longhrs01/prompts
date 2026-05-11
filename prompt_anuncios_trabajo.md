@@ -20,7 +20,7 @@ public record ContactInfo
     public bool SupportsWhatsApp { get; }
 }
 
-public class JobAd : Entity
+public class JobAd
 {
     public string Description { get; private set; }
     public Guid CategoryId { get; private set; }
@@ -62,8 +62,7 @@ public class JobAd : Entity
 ```json
 {
   "jobAds": [
-    {
-      "id": "GUID_GENERADO",
+    {      
       "description": "texto limpio del anuncio",
       "categoryId": "GUID_EXISTENTE | null",
       "categoryName": "nombre de la categoría",
