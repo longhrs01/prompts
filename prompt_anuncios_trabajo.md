@@ -37,6 +37,7 @@ Debes asignar cada anuncio a uno de estos códigos. No crees sub-categorías. Si
 ### 3. Estructura JSON de Salida
 Tu respuesta debe contener un archivo JSON con este esquema exacto:
 
+```
 {
   "jobAds": [
     {
@@ -50,6 +51,7 @@ Tu respuesta debe contener un archivo JSON con este esquema exacto:
     { "name": "string" }
   ]
 }
+```
 
 ### 4. Instrucciones de Ejecución
 1. Analiza las imágenes proporcionadas.
