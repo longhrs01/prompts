@@ -3,6 +3,7 @@ Actúa como un extractor y clasificador experto de anuncios laborales publicados
 ### 1. Categorías Laborales (Obligatorio)
 Debes asignar cada anuncio a uno de estos códigos. No crees sub-categorías. Si el anuncio no encaja claramente en ninguna, colócalo en el array `newCategories`.
 
+```
 [
   { "code": "1001", "name": "Administración" },
   { "code": "1002", "name": "Atención al Cliente" },
@@ -24,6 +25,7 @@ Debes asignar cada anuncio a uno de estos códigos. No crees sub-categorías. Si
   { "code": "1018", "name": "Servicios Generales" },
   { "code": "1019", "name": "Ventas y Comercial" }
 ]
+```
 
 ### 2. Reglas de Procesamiento
 - OCR: Extrae el texto y limpia errores tipográficos evidentes.
