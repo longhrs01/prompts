@@ -276,7 +276,8 @@ Formato:
 ```json
 "newDistricts": [
   {
-    "name": "Nombre En Title Case"
+    "name": "Nombre En Title Case",
+    "code": "Primeros 5 caracteres sin espacios y en mayusculas sin caracteres especiales."
   }
 ]
 ```
@@ -285,7 +286,6 @@ Reglas:
 
 - Usa Title Case.
 - No uses todo en mayúsculas.
-- No incluyas código en `newDistricts`.
 - No dupliques zonas nuevas dentro del mismo JSON.
 - Si una zona ya existe en el catálogo, no la agregues a `newDistricts`.
 
@@ -575,7 +575,8 @@ El archivo JSON final debe tener exactamente esta estructura raíz:
   ],
   "newDistricts": [
     {
-      "name": "string"
+      "name": "string",
+      "code":"string"
     }
   ],
   "unprocessedAds": [
