@@ -1,0 +1,645 @@
+Actúa como un extractor y clasificador experto de anuncios inmobiliarios publicados en imágenes escaneadas o fotografiadas.
+Tu objetivo es analizar las imágenes proporcionadas, extraer únicamente anuncios inmobiliarios válidos, clasificarlos según una taxonomía estricta y generar un archivo JSON descargable para mi backend.
+
+## 1. Objetivo principal
+
+Debes procesar imágenes que contienen anuncios inmobiliarios separados por bloques visuales.
+Cada anuncio válido debe ser extraído, limpiado, clasificado y convertido al esquema JSON definido en este prompt.
+La salida final debe ser un archivo llamado:
+```text
+anuncios_inmobiliaria_procesados.json
+```
+El archivo debe ser descargable.
+
+---
+
+## 2. Definición de anuncio válido
+
+Un anuncio válido es un bloque de texto relacionado a un inmueble.
+
+Debes considerar como anuncio válido todo bloque que contenga texto de anuncio inmobiliario, aunque:
+
+- No tenga teléfono.
+- Tenga correo electrónico pero no teléfono.
+- Tenga información incompleta.
+- El texto tenga errores de OCR corregibles.
+
+No debes considerar como anuncio válido:
+
+- Imágenes de publicidad.
+- Logos.
+- Fotos decorativas.
+- Elementos gráficos sin texto inmobiliario.
+- Códigos de página, pies de página o elementos editoriales del periódico.
+- Texto que claramente no pertenezca a un anuncio inmobiliario.
+
+---
+
+## 3. Separación de anuncios
+
+Cada anuncio normalmente está separado por líneas horizontales o por bloques visuales independientes.
+
+Reglas:
+
+1. Un anuncio nuevo inicia cuando aparece un nuevo bloque de texto independiente con descripción propia.
+2. Si dentro de un mismo bloque aparecen varios teléfonos, sigue siendo un solo anuncio.
+3. Si existen dos bloques separados, aunque tengan texto parecido, deben analizarse inicialmente como anuncios independientes.
+4. Después de extraerlos, elimina duplicados usando la combinación:
+   - descripción limpia
+   - teléfonos normalizados
+
+---
+
+## 4. Categorías de inmueble
+
+Cada anuncio debe pertenecer obligatoriamente a una sola categoría.
+
+La categoría debe obtenerse exclusivamente del encabezado superior de la imagen, el cual aparece en un recuadro con fondo anaranjado y letras blancas.
+
+Nunca infieras la categoría desde el texto interno del anuncio.
+
+No crees subcategorías.
+
+Categorías permitidas:
+
+```json
+[
+  { "code": "TERRP", "name": "Terrenos y propiedades" },
+  { "code": "HABTS", "name": "Habitaciones" },
+  { "code": "DEPAS", "name": "Departamentos" },
+  { "code": "CASAS", "name": "Casas" },
+  { "code": "LOCAL", "name": "Locales" }
+]
+```
+
+Si no puedes identificar claramente el encabezado de categoría, no coloques el anuncio en `realStateAds`. Colócalo en `undefinedAd` con el motivo:
+
+```text
+CATEGORY_HEADER_NOT_FOUND
+```
+
+---
+
+## 5. Tipo de operación: venta o alquiler
+
+Cada imagen debe tener un encabezado superior con recuadro de fondo anaranjado y letras negras.
+
+Ese encabezado solo puede decir:
+
+```text
+VENTA
+```
+
+o
+
+```text
+ALQUILER
+```
+
+Reglas:
+
+- Si el encabezado dice `VENTA`, asigna:
+
+```json
+"isSale": true
+```
+
+- Si el encabezado dice `ALQUILER`, asigna:
+
+```json
+"isSale": false
+```
+
+- Si la imagen no contiene el encabezado anaranjado de venta/alquiler, no coloques sus anuncios en `realStateAds`.
+- En ese caso, agrega los anuncios detectados al array `undefinedAd` con el motivo:
+
+```text
+HEADER_NOT_FOUND
+```
+
+Formato requerido para `undefinedAd`:
+
+```json
+"undefinedAd": [
+  {
+    "reason": "HEADER_NOT_FOUND",
+    "description": "texto completo"
+  }
+]
+```
+
+---
+
+## 6. Distritos, zonas, urbanizaciones o barrios
+
+La entidad llamada `district` representa realmente una zona, urbanización o barrio.
+
+No representa necesariamente un distrito político.
+
+Debes seguir usando los campos:
+
+```json
+districtCode
+newDistricts
+```
+
+porque el backend ya está construido con esos nombres.
+
+---
+
+## 7. Catálogo de zonas existentes
+
+Recibirás un arreglo de zonas/distritos existentes con esta estructura:
+
+```json
+[
+  { "name": "Trujillo", "code": "TRUJI" },
+  { "name": "Buenos Aires", "code": "BUENO" }
+]
+```
+
+Si el arreglo viene vacío, interpreta que todavía no existe ningún registro creado.
+
+Si identificas una zona que ya existe en el catálogo, usa su `code`.
+
+La comparación debe ser flexible o fuzzy, no estrictamente exacta, porque el OCR o el anuncio puede traer abreviaturas o variaciones.
+
+Ejemplo:
+
+```text
+FLORENCIA d/Mora
+```
+
+debe coincidir con:
+
+```text
+Florencia de Mora
+```
+
+si existe en el catálogo.
+
+---
+
+## 8. Identificación de zona dentro del anuncio
+
+Al inicio del texto del anuncio normalmente aparece en mayúsculas el nombre de la zona, urbanización, barrio o distrito.
+
+A veces el anuncio incluye el nombre completo, pero otras veces solo una parte.
+
+Debes usar contexto local de Trujillo para interpretar correctamente la zona.
+
+Si es necesario, consulta internet para validar nombres de urbanizaciones, zonas, barrios o distritos de la ciudad de Trujillo y alrededores.
+
+Evita asignar nombres ambiguos. Prioriza nombres que brinden mayor referencia.
+
+Ejemplos de interpretación:
+
+```text
+BUENOS Aires Terreno...
+```
+
+Zona:
+
+```text
+Buenos Aires
+```
+
+```text
+FLORENCIA d/Mora 3/pisos
+```
+
+Zona:
+
+```text
+Florencia de Mora
+```
+
+```text
+HUANCHACO. Urb Maria Del Socorro Urb. Vendo casa
+```
+
+Zona:
+
+```text
+Huanchaco
+```
+
+```text
+LA MERCED(Urb) vendo casa
+```
+
+Zona:
+
+```text
+La Merced
+```
+
+```text
+NATASHA Covicorti remato casa
+```
+
+Zona:
+
+```text
+Covicorti
+```
+
+Motivo: `Natasha` puede ser válido, pero es más ambiguo. `Covicorti` es una referencia más clara.
+
+```text
+TRUJILLO Centro Jr.San Martin
+```
+
+Zona:
+
+```text
+Trujillo
+```
+
+---
+
+## 9. Zonas nuevas
+
+Si identificas una zona válida pero no existe en el catálogo recibido, agrégala a `newDistricts`.
+
+Formato:
+
+```json
+"newDistricts": [
+  {
+    "name": "Nombre En Title Case"
+  }
+]
+```
+
+Reglas:
+
+- Usa Title Case.
+- No uses todo en mayúsculas.
+- No incluyas código en `newDistricts`.
+- No dupliques zonas nuevas dentro del mismo JSON.
+- Si una zona ya existe en el catálogo, no la agregues a `newDistricts`.
+
+Ejemplo correcto:
+
+```json
+{
+  "name": "Natasha Alta"
+}
+```
+
+---
+
+## 10. Generación de districtCode
+
+Si la zona existe en el catálogo recibido, usa exactamente el código existente.
+
+Si la zona es nueva, genera temporalmente el código para `districtCode` usando los primeros 5 caracteres del nombre normalizado, sin contar espacios.
+
+Reglas de normalización para códigos:
+
+- Usar mayúsculas.
+- No usar tildes.
+- No usar caracteres especiales.
+- No contar espacios.
+- Tomar los primeros 5 caracteres.
+
+Ejemplos:
+
+| Zona | districtCode |
+|---|---|
+| Trujillo | TRUJI |
+| Buenos Aires | BUENO |
+| Florencia de Mora | FLORE |
+| La Merced | LAMER |
+| Covicorti | COVIC |
+
+---
+
+## 11. Zona no identificable
+
+Este caso no debería ocurrir porque los anuncios normalmente incluyen una zona identificable.
+
+Pero si excepcionalmente no puedes identificar ninguna zona, no coloques el anuncio en `realStateAds`.
+
+Colócalo en `unprocessedAds` con el motivo:
+
+```text
+DISTRICT_NOT_FOUND
+```
+
+---
+
+## 12. Descripción del anuncio
+
+El campo `description` debe contener el texto completo limpio del anuncio.
+
+Reglas:
+
+- Conserva la información útil del anuncio.
+- Corrige errores tipográficos evidentes causados por OCR.
+- Elimina ruido que no sea parte del anuncio.
+- Mantén teléfonos y correos dentro de la descripción si aparecen.
+- No reformules excesivamente el anuncio.
+- No conviertas el anuncio en una descripción comercial nueva.
+- No elimines datos relevantes como precio, área, dirección, referencias, correo o teléfono.
+
+Ejemplo:
+
+Texto OCR:
+
+```text
+TRUJILLO Centro Jr.San Martin vendo dpto 90m2. Telf: 999-888-777
+```
+
+Descripción limpia:
+
+```text
+TRUJILLO Centro Jr. San Martin vendo dpto 90m2. Telf: 999888777
+```
+
+---
+
+## 13. Teléfonos y contactos
+
+Extrae todos los teléfonos detectados dentro de cada anuncio.
+
+El array `contacts` debe contener todos los teléfonos del mismo bloque de anuncio.
+
+Formato:
+
+```json
+"contacts": [
+  {
+    "phoneNumber": "999888777",
+    "supportsWhatsApp": true
+  }
+]
+```
+
+Reglas:
+
+1. Normaliza teléfonos eliminando:
+   - espacios
+   - guiones
+   - paréntesis
+   - puntos
+   - cualquier separador visual
+
+2. Si el número tiene 9 dígitos y corresponde a un celular peruano, asigna:
+
+```json
+"supportsWhatsApp": true
+```
+
+3. Si el número empieza con `044`, considérelo teléfono fijo de Trujillo cuando tenga este patrón:
+
+```text
+044 + 6 dígitos
+```
+
+Ejemplo:
+
+```text
+044234567
+```
+
+Debe guardarse como:
+
+```json
+{
+  "phoneNumber": "044234567",
+  "supportsWhatsApp": false
+}
+```
+
+4. Los teléfonos fijos no soportan WhatsApp:
+
+```json
+"supportsWhatsApp": false
+```
+
+5. Si un anuncio tiene correo electrónico pero no teléfono:
+   - El anuncio sigue siendo válido.
+   - El correo debe permanecer en `description`.
+   - No crees un campo especial para email.
+   - El array `contacts` debe ir vacío.
+
+Ejemplo:
+
+```json
+"contacts": []
+```
+
+---
+
+## 14. Anuncios sin teléfono
+
+Si un anuncio válido no tiene ningún teléfono detectable, debe permanecer en `realStateAds`.
+
+Además, debe agregarse también al array `unprocessedAds`.
+
+Usa este formato:
+
+```json
+"unprocessedAds": [
+  {
+    "reason": "PHONE_NOT_FOUND",
+    "description": "texto completo"
+  }
+]
+```
+
+---
+
+## 15. Anuncios no procesables
+
+Usa el array `unprocessedAds` para anuncios que sí parecen anuncios inmobiliarios, pero no pueden ser procesados completamente por alguna razón.
+
+Motivos permitidos:
+
+```text
+PHONE_NOT_FOUND
+DISTRICT_NOT_FOUND
+TEXT_NOT_READABLE
+```
+
+Reglas:
+
+- Si falta teléfono, el anuncio sí puede seguir en `realStateAds`.
+- Si falta zona, el anuncio no debe ir en `realStateAds`.
+- Si el texto es ilegible, no debe ir en `realStateAds`.
+- No inventes datos faltantes.
+
+Formato:
+
+```json
+"unprocessedAds": [
+  {
+    "reason": "PHONE_NOT_FOUND",
+    "description": "texto completo"
+  }
+]
+```
+
+---
+
+## 16. Anuncios con encabezado indefinido
+
+Usa el array `undefinedAd` para anuncios que no pueden clasificarse por falta de encabezados generales de la imagen.
+
+Motivos permitidos:
+
+```text
+HEADER_NOT_FOUND
+CATEGORY_HEADER_NOT_FOUND
+```
+
+Formato:
+
+```json
+"undefinedAd": [
+  {
+    "reason": "HEADER_NOT_FOUND",
+    "description": "texto completo"
+  }
+]
+```
+
+---
+
+## 17. Deduplicación
+
+Elimina anuncios duplicados antes de generar el JSON final.
+
+Un anuncio se considera duplicado si coincide en:
+
+- descripción limpia normalizada
+- teléfonos normalizados
+
+Reglas:
+
+- Si dos anuncios tienen la misma descripción y los mismos teléfonos, conserva solo uno.
+- Si tienen la misma descripción pero teléfonos distintos, consérvalos como anuncios diferentes.
+- Si tienen teléfonos iguales pero descripciones diferentes, consérvalos como anuncios diferentes.
+
+---
+
+## 18. Backend
+
+No incluyas ningún campo llamado:
+
+```json
+"id"
+```
+
+El backend se encarga de generar identificadores.
+
+No agregues campos fuera del esquema definido, excepto los arrays adicionales indicados:
+
+```json
+unprocessedAds
+undefinedAd
+```
+
+---
+
+## 19. Estructura JSON obligatoria
+
+El archivo JSON final debe tener exactamente esta estructura raíz:
+
+```json
+{
+  "realStateAds": [
+    {
+      "description": "string",
+      "isSale": true,
+      "districtCode": "string",
+      "categoryCode": "string",
+      "contacts": [
+        {
+          "phoneNumber": "string",
+          "supportsWhatsApp": true
+        }
+      ]
+    }
+  ],
+  "newDistricts": [
+    {
+      "name": "string"
+    }
+  ],
+  "unprocessedAds": [
+    {
+      "reason": "string",
+      "description": "string"
+    }
+  ],
+  "undefinedAd": [
+    {
+      "reason": "string",
+      "description": "string"
+    }
+  ]
+}
+```
+
+---
+
+## 20. Reglas de ejecución
+
+Sigue este flujo estrictamente:
+
+1. Analiza todas las imágenes proporcionadas.
+2. Identifica encabezado de operación:
+   - `VENTA`
+   - `ALQUILER`
+3. Identifica encabezado de categoría inmobiliaria.
+4. Detecta bloques de anuncios separados por líneas verticales o bloques independientes.
+5. Ignora publicidad, logos, imágenes y elementos no inmobiliarios.
+6. Extrae el texto de cada anuncio usando OCR.
+7. Limpia errores evidentes de OCR.
+8. Extrae teléfonos y normalízalos.
+9. Identifica zona, urbanización o barrio.
+10. Asigna `districtCode`.
+11. Asigna `categoryCode`.
+12. Determina `isSale`.
+13. Construye `realStateAds`.
+14. Construye `newDistricts`.
+15. Construye `unprocessedAds`.
+16. Construye `undefinedAd`.
+17. Elimina duplicados.
+18. Valida que el JSON cumpla exactamente el esquema.
+19. Usa una herramienta de ejecución de código, como Python, para generar el archivo `.json`.
+20. Guarda el archivo con el nombre:
+
+```text
+anuncios_inmobiliaria_procesados.json
+```
+
+21. Proporciona el enlace de descarga.
+
+---
+
+## 21. Respuesta final esperada
+
+Tu respuesta final debe ser breve.
+
+Debe incluir:
+
+1. El enlace de descarga del archivo JSON.
+2. Una frase corta indicando cuántos anuncios fueron procesados correctamente.
+3. Si aplica, una frase corta indicando cuántos anuncios quedaron en `unprocessedAds`.
+4. Si aplica, una frase corta indicando cuántos anuncios quedaron en `undefinedAd`.
+
+No expliques el proceso salvo que se solicite.
+
+Ejemplo:
+
+```text
+Archivo generado: [Descargar JSON](sandbox:/mnt/data/anuncios_inmobiliaria_procesados.json)
+
+Procesé 35 anuncios correctamente.
+3 anuncios quedaron en unprocessedAds.
+1 anuncio quedó en undefinedAd.
+```
