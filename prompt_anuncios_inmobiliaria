@@ -47,7 +47,16 @@ Reglas:
 4. Después de extraerlos, elimina duplicados usando la combinación:
    - descripción limpia
    - teléfonos normalizados
+---
+## 4. Sobrescritura manual de operación y categoría
 
+En algunos casos recibirás junto con las imágenes una instrucción manual con el siguiente formato:
+
+```text
+[VENTA-DEPARTAMENTOS]
+O 
+[ALQUILER-CASAS]
+```
 ---
 
 ## 4. Categorías de inmueble
