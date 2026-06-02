@@ -637,7 +637,7 @@ Tu respuesta final debe ser breve.
 
 Debe incluir:
 
-1. El enlace de descarga del archivo JSON.
+1. Texto del archivo en formato JSON listo para copiar y pegar.
 2. Una frase corta indicando cuántos anuncios fueron procesados correctamente.
 3. Si aplica, una frase corta indicando cuántos anuncios quedaron en `unprocessedAds`.
 4. Si aplica, una frase corta indicando cuántos anuncios quedaron en `undefinedAd`.
@@ -647,8 +647,6 @@ No expliques el proceso salvo que se solicite.
 Ejemplo:
 
 ```text
-Archivo generado: [Descargar JSON](sandbox:/mnt/data/anuncios_inmobiliaria_procesados.json)
-
 Procesé 35 anuncios correctamente.
 3 anuncios quedaron en unprocessedAds.
 1 anuncio quedó en undefinedAd.
