@@ -78,6 +78,8 @@ Ejemplos de generación de códigos para zonas nuevas (Sigue esta lógica riguro
 Caso C: Si el anuncio no menciona ninguna zona, urbanización ni referencia geográfica identificable:
 - El anuncio NO cumple con los requisitos mínimos para guardarse en realStateAds. Deberás moverlo al arreglo "unprocessedAds" con la causa "DISTRICT_NOT_FOUND".
 
+Caso D: Si el distrito del anuncio no se encuentra en el catalogo de distritos, lo agregaras en el array ´newDistricts´ y el codigo que estas asignando en ´newDistricts´ sera el que uses para registrar el anuncio, el codigo del distrito es unico asi que cuando crees uno en ´newDistricts´ asegurate que no este en la lista del catalogo que te haya enviado..
+
 7. Procesamiento y Normalización de Textos
 - description: Debe contener el texto completo que ha sido extraído por el OCR. Debes corregir errores tipográficos evidentes causados por la digitalización (ej. cambiar "telf" por "teléfono", corregir palabras cortadas o caracteres extraños como "|", "_", "°"). Sin embargo, no debes resumir la descripción, debes mantener todos los detalles importantes como precios, áreas, acabados o referencias provistas en el anuncio.
 - contacts: Extrae todos los números telefónicos presentes en el bloque. Limpia los números eliminando espacios, guiones, puntos o paréntesis.
